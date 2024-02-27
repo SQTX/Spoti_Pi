@@ -1,16 +1,21 @@
 #
 # Created by Jakub SQTX Sitarczyk on 27/02/2024.
 #
-
 # ****************************************************************
 # Imports
 # ****************************************************************
+# Control
 import board
 import time
-
 import rotaryio # Encoder lib
-
 from digitalio import DigitalInOut, Direction, Pull
+# Server
+import os
+import socketpool
+import wifi
+import ipaddress
+import adafruit_requests, ssl
+from adafruit_httpserver import Server, Request, Response, FileResponse, GET
 
 
 # ****************************************************************
@@ -59,10 +64,50 @@ last_position = None
 
 
 # ****************************************************************
-# Main loop
+# Server
+# SPDX-FileCopyrightText: 2022 Dan Halbert for Adafruit Industries
+# ****************************************************************
+ssid = os.getenv("WIFI_SSID")
+password = os.getenv("WIFI_PASSWORD")
+
+
+print("Connecting to", ssid)
+wifi.radio.connect(ssid, password)
+print("Connected to", ssid)
+
+pool = socketpool.SocketPool(wifi.radio)
+requests = adafruit_requests.Session(pool, ssl.create_default_context())    # HTTP requests
+server = Server(pool, "/static", debug=True)
+
+
+# ****************************************************************
+# Routing
+# ****************************************************************
+@server.route("/")
+def base(request: Request):
+    """
+    Starting website with link to another subsite
+    """
+    return FileResponse(request, "index.html", "/public")
+
+
+@server.route('/test')
+def test(request: Request):
+    """
+    Test subsite
+    """
+    return Response(request, "TESTer Skura")
+
+
+# ****************************************************************
+# Main APP
 # ****************************************************************
 print("RP Pico is running")
 
+server.serve_forever(str(wifi.radio.ipv4_address)) # Start local server
+
+
+# Main loop
 while True:
     enc_position = encoder.position
     if last_position == None or enc_position != last_position:

@@ -69,7 +69,7 @@ last_position = None
 # User data:
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
+REDIRECT_URI = os.getenv("REDIRECT_URI")    # URL/IP+/callback
 # ---------------------------------------------------
 # Url addresses:
 AUTH_URL = "https://accounts.spotify.com/authorize"

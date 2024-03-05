@@ -78,6 +78,16 @@ API_BASE_URL = "https://api.spotify.com/v1/"
 
 
 # ****************************************************************
+# SoftRAM
+# ****************************************************************
+'''
+access_token = ""
+refresh_token = ""
+expires_at = 0
+'''
+session = []
+
+# ****************************************************************
 # Server
 # SPDX-FileCopyrightText: 2022 Dan Halbert for Adafruit Industries
 # ****************************************************************
@@ -111,6 +121,88 @@ def test(request: Request):
     Test subsite
     """
     return Response(request, "TESTer Skura")
+
+
+@server.route('/login')
+def login(request: Request):
+    scope = "user-read-private user-read-email playlist-read-private user-read-currently-playing user-modify-playback-state"
+
+    params = {
+        'client_id': CLIENT_ID,
+        'response_type': 'code',
+        'scope': scope,
+        'redirect_uri': REDIRECT_URI,
+        'show_dialog': True
+    }
+
+    auth_url = f"{AUTH_URL}?{urlencode(params)}"
+
+    return Redirect(request, auth_url)
+
+
+@server.route('/callback')
+def callback(request: Request):
+    if 'error' in request.query_params.fields:
+        #return JSONResponse(request, {"error": request.query_params.get('error')})
+        return Response(request, "Error")
+
+    if 'code' in request.query_params.fields:
+        req_body = {
+            "code": request.query_params.get('code'),
+            'grant_type': 'authorization_code',
+            'redirect_uri': REDIRECT_URI,
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET
+        }
+
+        try:
+            response = requests.post(TOKEN_URL, data=req_body)
+            token_info = response.json()
+            response.close()
+
+            print(token_info)
+
+            #global access_token, refresh_token, expires_at  # Define variables like a global var
+
+            session.append(token_info['access_token'])
+            session.append(token_info['refresh_token'])
+            expires_at = time.time() + token_info['expires_in']
+            session.append(expires_at)
+
+        except Exception as e:
+            print("Error-callback:\n", str(e))
+
+        return Redirect(request, "/main")
+
+
+@server.route('/main')
+def main(request: Request):
+    '''
+    access_token = session[0]
+    expires_at = session[2]
+
+    if access_token == "":
+        return Redirect(request, "/login")
+    if time.time() > expires_at:
+        return Redirect(request, "/refresh")
+
+    try:
+        req_url = API_BASE_URL + "me/player/currently-playing"
+
+        req_headers = {'Authorization': f"Bearer {access_token}"}
+
+        response = requests.get(req_url, headers=req_headers)
+        curr_playing = response.json()
+        response.close()
+
+    except Exception as e:
+        print("Error-main:\n", str(e))
+
+    # TODO: If img's not exist
+    #img_url = playlists['item']['album']['images'][1]['url']
+    #print(img_url)
+    '''
+    return FileResponse(request, "main.html", "/public")
 
 
 # ****************************************************************

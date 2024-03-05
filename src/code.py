@@ -16,6 +16,7 @@ import wifi
 import ipaddress
 import adafruit_requests, ssl
 from adafruit_httpserver import Server, Request, Response, FileResponse, GET
+from circuitpython_parse import urlencode
 
 
 # ****************************************************************
@@ -177,7 +178,6 @@ def callback(request: Request):
 
 @server.route('/main')
 def main(request: Request):
-    '''
     access_token = session[0]
     expires_at = session[2]
 
@@ -191,7 +191,7 @@ def main(request: Request):
 
         req_headers = {'Authorization': f"Bearer {access_token}"}
 
-        response = requests.get(req_url, headers=req_headers)
+        response = requests.get(req_url, headers=req_headers)   # ERROR
         curr_playing = response.json()
         response.close()
 
@@ -201,7 +201,7 @@ def main(request: Request):
     # TODO: If img's not exist
     #img_url = playlists['item']['album']['images'][1]['url']
     #print(img_url)
-    '''
+
     return FileResponse(request, "main.html", "/public")
 
 

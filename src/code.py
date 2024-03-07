@@ -205,6 +205,50 @@ def main(request: Request):
     return FileResponse(request, "main.html", "/public")
 
 
+@server.route('/skip')
+def skip(request: Request):
+    if access_token == "":
+        return Redirect(request, "/login")
+
+    if time.time() > expires_at:
+        return Redirect(request, "/refresh")
+
+    try:
+        req_url = API_BASE_URL + "me/player/next"
+        req_headers = {'Authorization': f"Bearer {access_token}"}
+
+        requests.post(req_url, headers=req_headers)
+
+    except Exception as e:
+        print("Error-skip:\n", str(e))
+
+    return Redirect(request, "/main")
+
+
+@server.route('/refresh')
+def refresh():
+    if access_token == "":
+        return Redirect(request, "/login")
+
+    if time.time() > expires_at:
+        req_body = {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token,
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET
+        }
+        try:
+            response = requests.post(TOKEN_URL, data=req_body)
+            new_token_info = json.loads(response.text)
+
+            access_token = new_token_info['access_token']
+            expires_at = time.time() + new_token_info['expires_in']
+
+            return Redirect(request, "/main")
+        except Exception as e:
+            print("Error-refresh:\n", str(e))
+
+
 # ****************************************************************
 # Main APP
 # ****************************************************************
